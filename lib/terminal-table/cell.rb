@@ -77,10 +77,19 @@ module Terminal
         if stylized?
           a = TEXT_COLORS[text_color]
           b = BACKGROUND_COLORS[background_color]
-          c = TEXT_STYLES[text_style]
-          " \e[#{a};#{b};#{c}m#{value}\e[0m ".align alignment, width + 16
+          c = TEXT_STYLES[text_style] || 3
+          if a.nil? && b.nil?
+            str = "m"
+          elsif a.nil? && !b.nil?
+            str = ";;#{b}m"
+          elsif b.nil? && !a.nil?
+            str = ";#{a}m"
+          else
+            str = ";#{a};#{b}m"
+          end
+          " \e[#{c}#{str}#{value}\e[0m ".align alignment, width + cell_padding
         else
-          " #{value} ".align alignment, width + 2
+          " #{value} ".align alignment, width + cell_padding
         end
       end
       alias :to_s :render
@@ -89,7 +98,22 @@ module Terminal
       # Cell length.
       
       def length
-        value.to_s.length + (stylized? ? 16 : 2)
+        value.to_s.length + cell_padding
+      end
+      
+      ##
+      # Determine the cell padding
+      
+      def cell_padding
+        @padding ||= if stylized? 
+          pad = 16
+          pad -= 3 if background_color.nil?
+          pad -= 2 if text_color.nil?
+          pad -= 1 if background_color.nil? && text_color.nil?
+          pad
+        else
+          2
+        end
       end
       
       ##
