@@ -54,7 +54,7 @@ module Terminal
       ##
       # Cell Text Style
       
-      attr_reader :text_style            
+      attr_reader :text_style
       
       ##
       # Initialize with _width_ and _options_.
@@ -64,9 +64,9 @@ module Terminal
         @value, options = options, {} unless Hash === options
         @value = options.fetch :value, value
         @alignment = options.fetch :alignment, :left
-        @text_color = options.fetch :text_color, :white
-        @text_style = options.fetch :text_style, :plain
-        @background_color = options.fetch :background_color, :black
+        @text_color = options.fetch :text_color, nil#:white
+        @text_style = options.fetch :text_style, nil#:plain
+        @background_color = options.fetch :background_color, nil#:black
         @colspan = options.fetch :colspan, 1
       end
       
@@ -74,10 +74,14 @@ module Terminal
       # Render the cell.
       
       def render
-        a = TEXT_COLORS[text_color]
-        b = BACKGROUND_COLORS[background_color]
-        c = TEXT_STYLES[text_style]
-        " \e[#{a};#{b};#{c}m#{value}\e[0m ".align alignment, width + 16#2
+        if stylized?
+          a = TEXT_COLORS[text_color]
+          b = BACKGROUND_COLORS[background_color]
+          c = TEXT_STYLES[text_style]
+          " \e[#{a};#{b};#{c}m#{value}\e[0m ".align alignment, width + 16
+        else
+          " #{value} ".align alignment, width + 2
+        end
       end
       alias :to_s :render
       
@@ -85,7 +89,14 @@ module Terminal
       # Cell length.
       
       def length
-        value.to_s.length + 16#2
+        value.to_s.length + (stylized? ? 16 : 2)
+      end
+      
+      ##
+      # Check if any visual styles have been applied
+      
+      def stylized?
+        !text_color.nil? || !background_color.nil? || !text_style.nil?
       end
     end
   end
